@@ -1,0 +1,36 @@
+﻿<Window x:Class="WireVizWPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="WireViz WPF Editor" Height="600" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="5">
+            <Button Content="Add Connector" Click="AddConnector_Click" Margin="5"/>
+            <Button Content="Add Cable" Click="AddCable_Click" Margin="5"/>
+            <Button Content="Add Node" Click="AddNode_Click" Margin="5"/>
+            <Button Content="Edit Properties" Click="EditProperties_Click" Margin="5"/>
+            <Button Content="Add BOM Item" Click="AddBomItem_Click" Margin="5"/>
+            <Button Content="Edit Metadata" Click="EditMetadata_Click" Margin="5"/>
+            <Button Content="Edit Options" Click="EditOptions_Click" Margin="5"/>
+            <Button Content="Connect Mode" Click="ToggleConnectMode_Click" Margin="5"/>
+            <Button Content="Generate YAML" Click="GenerateYaml_Click" Margin="5"/>
+        </StackPanel>
+
+        <!-- Canvas for drawing -->
+        <Canvas x:Name="MainCanvas" Grid.Row="1" Background="White" 
+                MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
+                MouseMove="Canvas_MouseMove"
+                MouseLeftButtonUp="Canvas_MouseLeftButtonUp">
+        </Canvas>
+
+        <!-- Output area -->
+        <TextBox x:Name="YamlOutput" Grid.Row="2" Height="150" Margin="5" 
+                 AcceptsReturn="True" AcceptsTab="True" IsReadOnly="True"/>
+    </Grid>
+</Window>
