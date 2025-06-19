@@ -692,8 +692,8 @@ namespace WireVizWPF
         {
             double left = Canvas.GetLeft(element);
             double top = Canvas.GetTop(element);
-            double width = element is Rectangle rect ? rect.Width : ((Ellipse)element).Width;
-            double height = element is Rectangle rect2 ? rect2.Height : ((Ellipse)element).Height;
+            double width = element is Grid rect ? rect.Width : ((Ellipse)element).Width;
+            double height = element is Grid rect2 ? rect2.Height : ((Ellipse)element).Height;
 
             return mousePos.X >= left && mousePos.X <= left + width &&
                    mousePos.Y >= top && mousePos.Y <= top + height;
@@ -737,16 +737,29 @@ namespace WireVizWPF
                 return;
             }
 
-            Rectangle element = new Rectangle
+            Grid g = new()
             {
                 Width = 60,
                 Height = 20 + props.PinLabels.Count * 15,
-                Fill = Brushes.Blue,
+                Background = Brushes.Blue
+            };
+            Canvas.SetTop(g, 50);
+            Canvas.SetLeft(g, 50);
+
+            g.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(5) });
+            for (int i = 0; i < props.PinLabels.Count; i++)
+                g.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(1, GridUnitType.Star) });
+            g.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(12.5) });
+
+            Rectangle element = new Rectangle
+            {
+                Fill = Brushes.Transparent,
                 Stroke = Brushes.Black,
                 StrokeThickness = 2
             };
-            Canvas.SetLeft(element, 50);
-            Canvas.SetTop(element, 50);
+            Grid.SetRow(element, 0);
+            Grid.SetRowSpan(element, props.PinLabels.Count + 2);
+            g.Children.Add(element);
 
             List<(UIElement pin, string pinName, string label)> pins = new List<(UIElement, string, string)>();
             for (int i = 0; i < props.PinLabels.Count; i++)
@@ -762,22 +775,36 @@ namespace WireVizWPF
                 };
                 string pinName = props.PinLabels[i];
                 double pinX = props.PinSide == PinSide.Left ? -10 : 60;
-                Canvas.SetLeft(pin, Canvas.GetLeft(element) + pinX);
-                Canvas.SetTop(pin, Canvas.GetTop(element) + 10 + i * 15);
+                Canvas.SetLeft(pin, Canvas.GetLeft(g) + pinX);
+                Canvas.SetTop(pin, Canvas.GetTop(g) + 10 + i * 15);
                 pins.Add((pin, pinName, props.PinLabels[i]));
                 MainCanvas.Children.Add(pin);
+
+                TextBlock tb = new()
+                {
+                    Text = props.PinLabels[i],
+                    Background = Brushes.Transparent,
+                    FontWeight = FontWeights.Bold,
+                    FontSize = 14,
+                    Foreground = Brushes.White,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                Grid.SetRow(tb, i + 1);
+                g.Children.Add(tb);
+
                 Console.WriteLine($"Added connector pin: {props.Name}:{pinName}");
             }
 
             elements.Add(new Element
             {
-                UIElement = element,
+                UIElement = g,
                 Type = "Connector",
                 Name = props.Name,
                 ConnectorProps = props,
                 Pins = pins
             });
-            MainCanvas.Children.Add(element);
+            MainCanvas.Children.Add(g);
             Console.WriteLine($"Added connector: {props.Name}");
         }
 
@@ -789,16 +816,30 @@ namespace WireVizWPF
                 return;
             }
 
-            Rectangle element = new Rectangle
+            Grid g = new()
             {
                 Width = 60,
                 Height = 20 + props.WireCount * 15,
-                Fill = Brushes.Green,
+                Background = Brushes.Green
+            };
+            Canvas.SetLeft(g, 50);
+            Canvas.SetTop(g, 50);
+
+            g.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(5) });
+            for (int i = 0; i < props.WireCount; i++)
+                g.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(1, GridUnitType.Star) });
+            g.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(12.5) });
+
+            Rectangle element = new Rectangle
+            {
+                Fill = Brushes.Transparent,
                 Stroke = Brushes.Black,
                 StrokeThickness = 2
             };
-            Canvas.SetLeft(element, 50);
-            Canvas.SetTop(element, 50);
+            Grid.SetRow(element, 0);
+            Grid.SetRowSpan(element, props.WireCount + 2);
+            g.Children.Add(element);
+
 
             List<(UIElement pin, string pinName, string label)> wires = new List<(UIElement, string, string)>();
             for (int i = 0; i < (props.WireCount * 2); i++)
@@ -813,10 +854,27 @@ namespace WireVizWPF
                     Tag = $"Wire_{props.WireLabels[i / 2]}"
                 };
                 string wireName = ((i % 2 == 0) ? "i" : "o") + props.WireLabels[i / 2];
-                Canvas.SetLeft(wire, Canvas.GetLeft(element) + (i % 2 == 0 ? -10 : 60));
-                Canvas.SetTop(wire, Canvas.GetTop(element) + 10 + (i / 2) * 15);
+                Canvas.SetLeft(wire, Canvas.GetLeft(g) + (i % 2 == 0 ? -10 : 60));
+                Canvas.SetTop(wire, Canvas.GetTop(g) + 10 + (i / 2) * 15);
                 wires.Add((wire, wireName, props.Colors.ElementAtOrDefault((i / 2)) ?? wireName));
                 MainCanvas.Children.Add(wire);
+
+                if (i % 2 == 0)
+                {
+                    TextBlock tb = new()
+                    {
+                        Text = props.WireLabels[i / 2],
+                        Background = Brushes.Transparent,
+                        FontWeight = FontWeights.Bold,
+                        FontSize = 14,
+                        Foreground = Brushes.White,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+                    Grid.SetRow(tb, (i / 2) + 1);
+                    g.Children.Add(tb);
+                }
+
                 Console.WriteLine($"Added cable wire: {props.Name}:{wireName}");
             }
 
@@ -831,8 +889,8 @@ namespace WireVizWPF
                     StrokeThickness = 1,
                     Tag = "Shield"
                 };
-                Canvas.SetLeft(shieldPin, Canvas.GetLeft(element) + 60);
-                Canvas.SetTop(shieldPin, Canvas.GetTop(element) + 10 + (props.WireCount / 2) * 15);
+                Canvas.SetLeft(shieldPin, Canvas.GetLeft(g) + 60);
+                Canvas.SetTop(shieldPin, Canvas.GetTop(g) + 10 + (props.WireCount / 2) * 15);
                 wires.Add((shieldPin, "s", "Shield"));
                 MainCanvas.Children.Add(shieldPin);
                 Console.WriteLine($"Added cable shield: {props.Name}:s");
@@ -840,13 +898,13 @@ namespace WireVizWPF
 
             elements.Add(new Element
             {
-                UIElement = element,
+                UIElement = g,
                 Type = "Cable",
                 Name = props.Name,
                 CableProps = props,
                 Pins = wires
             });
-            MainCanvas.Children.Add(element);
+            MainCanvas.Children.Add(g);
             Console.WriteLine($"Added cable: {props.Name}");
         }
 
@@ -996,8 +1054,11 @@ namespace WireVizWPF
                         continue;
                     }
 
+                    if (processedPins.Contains(startPinName + endPinName))
+                        continue;
+
                     // Handle connections where cable is the start element
-                    if (startElement.Name == cable.Name && !processedPins.Contains(startPinName))
+                    if (startElement.Name == cable.Name)
                     {
                         // Find matching connection where cable is the end element
                         var relatedConnection = cableConnections
@@ -1005,7 +1066,9 @@ namespace WireVizWPF
                             {
                                 var otherStartElement = elements.Find(x => x.Pins.Exists(p => p.pin == c.startPin));
                                 var otherEndElement = elements.Find(x => x.Pins.Exists(p => p.pin == c.endPin));
-                                return otherEndElement?.Name == cable.Name && c.endPin != endPin && !processedPins.Contains(otherEndElement.Pins.Find(p => p.pin == c.endPin).pinName);
+                                var otherendpinname = otherEndElement?.Pins.Find(p => p.pin == c.endPin).pinName;
+                                var otherstartpinname = otherStartElement?.Pins.Find(p => p.pin == c.startPin).pinName;
+                                return otherEndElement?.Name == cable.Name && c.endPin != endPin && !processedPins.Contains(otherstartpinname + otherendpinname);
                             });
 
                         if (relatedConnection != default)
@@ -1018,14 +1081,14 @@ namespace WireVizWPF
                             if (otherStartElement != null && otherStartPinName != null && otherEndPinName != null)
                             {
                                 wireConnections.Add((otherStartElement.Name, otherStartPinName, otherEndPinName, startPinName, endElement.Name, endPinName));
-                                processedPins.Add(startPinName);
-                                processedPins.Add(otherEndPinName);
+                                processedPins.Add(startPinName + endPinName);
+                                processedPins.Add(otherStartPinName + otherEndPinName);
                                 Console.WriteLine($"Matched connection: {otherStartElement.Name}:{otherStartPinName} -> {cable.Name}:{otherEndPinName} -> {cable.Name}:{startPinName} -> {endElement.Name}:{endPinName}");
                             }
                         }
                     }
                     // Handle connections where cable is the end element
-                    else if (endElement.Name == cable.Name && !processedPins.Contains(endPinName))
+                    else if (endElement.Name == cable.Name)
                     {
                         // Find matching connection where cable is the start element
                         var relatedConnection = cableConnections
@@ -1033,7 +1096,9 @@ namespace WireVizWPF
                             {
                                 var otherStartElement = elements.Find(x => x.Pins.Exists(p => p.pin == c.startPin));
                                 var otherEndElement = elements.Find(x => x.Pins.Exists(p => p.pin == c.endPin));
-                                return otherStartElement?.Name == cable.Name && c.startPin != startPin && !processedPins.Contains(otherStartElement.Pins.Find(p => p.pin == c.startPin).pinName);
+                                var otherendpinname = otherEndElement?.Pins.Find(p => p.pin == c.endPin).pinName;
+                                var otherstartpinname = otherStartElement?.Pins.Find(p => p.pin == c.startPin).pinName;
+                                return otherStartElement?.Name == cable.Name && c.startPin != startPin && !processedPins.Contains(otherstartpinname + otherendpinname);
                             });
 
                         if (relatedConnection != default)
@@ -1046,8 +1111,8 @@ namespace WireVizWPF
                             if (otherEndElement != null && otherStartPinName != null && otherEndPinName != null)
                             {
                                 wireConnections.Add((startElement.Name, startPinName, endPinName, otherStartPinName, otherEndElement.Name, otherEndPinName));
-                                processedPins.Add(endPinName);
-                                processedPins.Add(otherStartPinName);
+                                processedPins.Add(startPinName + endPinName);
+                                processedPins.Add(otherStartPinName + otherEndPinName);
                                 Console.WriteLine($"Matched connection: {startElement.Name}:{startPinName} -> {cable.Name}:{endPinName} -> {cable.Name}:{otherStartPinName} -> {otherEndElement.Name}:{otherEndPinName}");
                             }
                         }
@@ -1063,6 +1128,19 @@ namespace WireVizWPF
                     yaml.AppendLine($"    - {rightConnector}: [{rightPin}]");
                     Console.WriteLine($"Adding connection chain: {leftConnector}:[{leftPin}] -> {cable.Name}:[{cablePin1}] -> {cable.Name}:[{cablePin2}] -> {rightConnector}:[{rightPin}]");
                 }
+
+                //List<(string, List<string>, List<string>, List<string>, string, List<string>)> _wireConnections =
+                //    combineWireConnections(wireConnections);
+
+                //// Output valid wire connections
+                //foreach (var (leftConnector, leftPin, cablePin1, cablePin2, rightConnector, rightPin) in _wireConnections)
+                //{
+                //    yaml.AppendLine("  -");
+                //    yaml.AppendLine($"    - {leftConnector}: [{string.Join(", ", leftPin)}]");
+                //    yaml.AppendLine($"    - {cable.Name}: [{string.Join(", ", cablePin1)}]");
+                //    yaml.AppendLine($"    - {rightConnector}: [{string.Join(", ", rightPin)}]");
+                //    Console.WriteLine($"Adding connection chain: {leftConnector}:[{leftPin}] -> {cable.Name}:[{cablePin1}] -> {cable.Name}:[{cablePin2}] -> {rightConnector}:[{rightPin}]");
+                //}
             }
 
             // Shield Connections
@@ -1117,6 +1195,38 @@ namespace WireVizWPF
 
             YamlOutput.Text = yaml.ToString();
         }
+
+        //private List<(string, List<string>, List<string>, List<string>, string, List<string>)> combineWireConnections(
+        //    List<(string, string, string, string, string, string)> input)
+        //{
+        //    List<(string, List<string>, List<string>, List<string>, string, List<string>)> output = new();
+
+        //    foreach (var ip in input)
+        //    {
+        //        // output conn ; output pin ; wire input ; wire output ; input conn ; input pin
+        //        var tmplist = output.Where(x => ((x.Item1 == ip.Item1) && (x.Item5 == ip.Item5))).ToList();
+        //        if (tmplist.Any())
+        //        {
+        //            var tmpitem = tmplist[0];
+        //            output.Remove(tmpitem);
+        //            tmpitem.Item2.Add(ip.Item2);
+        //            tmpitem.Item3.Add(ip.Item3[1..]);
+        //            tmpitem.Item4.Add(ip.Item4[1..]);
+        //            tmpitem.Item6.Add(ip.Item6);
+        //            output.Add(tmpitem);
+        //        }
+        //        else
+        //        {
+        //            var l1 = new List<string>() { ip.Item2 };
+        //            var l2 = new List<string>() { ip.Item3[1..] };
+        //            var l3 = new List<string>() { ip.Item4[1..] };
+        //            var l4 = new List<string>() { ip.Item6 };
+        //            output.Add(new(ip.Item1, l1, l2, l3, ip.Item5, l4));
+        //        }
+        //    }
+
+        //    return output;
+        //}
     }
 
     public enum PinSide
